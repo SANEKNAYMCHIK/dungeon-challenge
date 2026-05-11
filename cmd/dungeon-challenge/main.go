@@ -2,6 +2,7 @@ package main
 
 import (
 	"dungeon-challenge/config"
+	"dungeon-challenge/platform/output"
 	"flag"
 	"fmt"
 )
@@ -12,4 +13,8 @@ func main() {
 	fmt.Println(configPath)
 	cfg := config.MustLoad(configPath)
 	fmt.Println(cfg)
+	ew := output.MustMakeWriter(cfg.Output.OutputName)
+	// TODO: defer ew.Close()
+	_ = ew
+
 }
