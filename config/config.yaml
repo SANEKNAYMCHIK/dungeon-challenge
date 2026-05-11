@@ -1,0 +1,6 @@
+input:
+  dungeon: "config.json"
+  events: "events.txt"
+output:
+  events: "output.txt"
+  report: "report.txt"
