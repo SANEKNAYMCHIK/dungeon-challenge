@@ -15,8 +15,8 @@ func (ew *Writer) Write(data []byte) (int, error) {
 	return ew.file.Write(data)
 }
 
-func (ew *Writer) Close() {
-	ew.file.Close()
+func (ew *Writer) Close() error {
+	return ew.file.Close()
 }
 
 func MustMakeWriter(filename string) *Writer {
