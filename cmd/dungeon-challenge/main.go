@@ -14,7 +14,7 @@ func main() {
 	cfg := config.MustLoad(configPath)
 	fmt.Println(cfg)
 	ew := output.MustMakeWriter(cfg.Output.OutputName)
-	// TODO: defer ew.Close()
+	defer ew.Close()
 	_ = ew
 
 }
