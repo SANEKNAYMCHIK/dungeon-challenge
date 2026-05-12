@@ -2,9 +2,11 @@ package main
 
 import (
 	"dungeon-challenge/config"
-	"dungeon-challenge/platform/output"
+	"dungeon-challenge/internal/controller/output"
+	"dungeon-challenge/internal/controller/parser"
 	"flag"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -15,6 +17,11 @@ func main() {
 	fmt.Println(cfg)
 	ew := output.MustMakeWriter(cfg.Output.OutputName)
 	defer ew.Close()
-	_ = ew
 
+	dungeonParser := parser.NewDungeonParser(cfg.Input.ConfigName)
+	dungeon, err := dungeonParser.ParseDungeon()
+	if err != nil {
+		log.Fatalf("error parsing dungeon: %v", err)
+	}
+	fmt.Println(dungeon.Duration)
 }
