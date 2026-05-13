@@ -15,18 +15,19 @@ type EventReader interface {
 }
 
 type EventWriter interface {
-	Write(eventID domain.EventType, lineTime domain.CustomTime, userID int, params string) (int, error)
+	WriteEvent(eventID domain.EventType, event domain.Event) (int, error)
+	WriteImpossibleMove(eventID domain.EventType, event domain.Event, param string) (int, error)
 }
 
 type DungeonRunner struct {
 	dungeonInfo  domain.Dungeon
 	eventsReader EventReader
 	outputWriter EventWriter
-	reportWriter *output.Writer
+	reportWriter *output.EventWriter
 	users        map[int]*domain.User
 }
 
-func NewDungeonRunner(dungeonInfo domain.Dungeon, eventsReader EventReader, outputWriter *output.Writer, reportWriter *output.Writer) *DungeonRunner {
+func NewDungeonRunner(dungeonInfo domain.Dungeon, eventsReader EventReader, outputWriter *output.EventWriter, reportWriter *output.EventWriter) *DungeonRunner {
 	return &DungeonRunner{
 		dungeonInfo:  dungeonInfo,
 		eventsReader: eventsReader,
@@ -44,53 +45,64 @@ func toInt(param string) (int, error) {
 	return res, nil
 }
 
-func (dr *DungeonRunner) getUser(id int) (*domain.User, bool) {
-	user, exists := dr.users[id]
-	return user, exists
+func (dr *DungeonRunner) requireUser(id int) bool {
+	_, exists := dr.users[id]
+	return exists
 }
 
-func (dr *DungeonRunner) createNewUserWithDisqualification(event domain.Event) {
+func (dr *DungeonRunner) requireState(user *domain.User, expected domain.UserState) bool {
+	if user.State != expected {
+		return false
+	}
+	return true
+}
+
+func (dr *DungeonRunner) disqualifyUnregisteredUser(event domain.Event) {
 	dr.users[event.User] = &domain.User{
 		ID:     event.User,
 		Health: domain.MaxHealth,
 		State:  domain.StateDisqualified,
 		Result: domain.ReportHeaderDisqual,
 	}
-	dr.outputWriter.Write(domain.EventDisqualified, event.Time, event.User, "")
+	dr.outputWriter.WriteEvent(domain.EventDisqualified, event)
 }
 
 func (dr *DungeonRunner) HandleRegister(event domain.Event) {
-	if _, exists := dr.getUser(event.User); !exists {
-		dr.users[event.User] = &domain.User{}
-		dr.users[event.User].ID = event.User
-		dr.users[event.User].Health = domain.MaxHealth
-		dr.users[event.User].State = domain.StateRegistered
-		dr.outputWriter.Write(event.ID, event.Time, event.User, "")
+	if !dr.requireUser(event.User) {
+		dr.users[event.User] = &domain.User{
+			ID:     event.User,
+			Health: domain.MaxHealth,
+			State:  domain.StateRegistered,
+		}
+		dr.outputWriter.WriteEvent(event.ID, event)
 	} else {
 		dr.users[event.User].State = domain.StateDisqualified
 		dr.users[event.User].Result = domain.ReportHeaderDisqual
-		dr.outputWriter.Write(domain.EventDisqualified, event.Time, event.User, "")
+		dr.outputWriter.WriteEvent(domain.EventDisqualified, event)
 	}
 }
 
 func (dr *DungeonRunner) HandleInDungeon(event domain.Event) {
-	if user, exists := dr.getUser(event.User); exists {
-		if user.State == domain.StateRegistered {
+	if dr.requireUser(event.User) {
+		user := dr.users[event.User]
+		if dr.requireState(user, domain.StateRegistered) {
 			user.State = domain.StateInDungeon
-			dr.outputWriter.Write(event.ID, event.Time, event.User, "")
+			dr.outputWriter.WriteEvent(event.ID, event)
 		} else {
-			user.State = domain.StateDisqualified
-			user.Result = domain.ReportHeaderDisqual
-			dr.outputWriter.Write(domain.EventDisqualified, event.Time, event.User, "")
+			dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
+			// user.State = domain.StateDisqualified
+			// user.Result = domain.ReportHeaderDisqual
+			// dr.outputWriter.Write(domain.EventDisqualified, event.Time, event.User, "")
 		}
 	} else {
-		dr.createNewUserWithDisqualification(event)
+		dr.disqualifyUnregisteredUser(event)
 	}
 }
 
 func (dr *DungeonRunner) HandleHealth(event domain.Event) {
-	if user, exists := dr.getUser(event.User); exists {
-		if user.State == domain.StateInDungeon {
+	if dr.requireUser(event.User) {
+		user := dr.users[event.User]
+		if dr.requireState(user, domain.StateInDungeon) {
 			healthVal, err := toInt(event.Param)
 			if err != nil {
 				log.Printf("error converting health value to int: %v", err)
@@ -100,14 +112,12 @@ func (dr *DungeonRunner) HandleHealth(event domain.Event) {
 			if user.Health > domain.MaxHealth {
 				user.Health = domain.MaxHealth
 			}
-			dr.outputWriter.Write(event.ID, event.Time, event.User, event.Param)
+			dr.outputWriter.WriteEvent(event.ID, event)
 		} else {
-			user.State = domain.StateDisqualified
-			user.Result = domain.ReportHeaderDisqual
-			dr.outputWriter.Write(domain.EventDisqualified, event.Time, event.User, "")
+			dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
 		}
 	} else {
-		dr.createNewUserWithDisqualification(event)
+		dr.disqualifyUnregisteredUser(event)
 	}
 }
 

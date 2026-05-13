@@ -1,5 +1,7 @@
 package domain
 
+import "fmt"
+
 type EventType int
 
 const (
@@ -18,3 +20,7 @@ const (
 	EventDead
 	EventImpossibleMove
 )
+
+func (e EventType) String() string {
+	return fmt.Sprintf("%d", e)
+}
