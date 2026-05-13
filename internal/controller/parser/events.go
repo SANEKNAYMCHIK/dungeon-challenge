@@ -10,6 +10,7 @@ import (
 
 type EventsParser struct {
 	EventsFile *bufio.Scanner
+	file       *os.File
 }
 
 func NewEventsParser(filename string) (*EventsParser, error) {
@@ -20,7 +21,12 @@ func NewEventsParser(filename string) (*EventsParser, error) {
 	scanner := bufio.NewScanner(file)
 	return &EventsParser{
 		EventsFile: scanner,
+		file:       file,
 	}, nil
+}
+
+func (ep *EventsParser) Close() error {
+	return ep.file.Close()
 }
 
 func (ep *EventsParser) ReadEvent() (domain.Event, error) {

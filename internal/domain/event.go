@@ -2,7 +2,7 @@ package domain
 
 type Event struct {
 	Time  CustomTime
-	ID    int
+	ID    EventType
 	User  int
 	Param string
 }

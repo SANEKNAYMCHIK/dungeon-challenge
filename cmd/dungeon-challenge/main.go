@@ -32,6 +32,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("error creating events parser: %v", err)
 	}
+	defer func() {
+		if err := eventsParser.Close(); err != nil {
+			log.Printf("failed to close events file: %v", err)
+		}
+	}()
+
 	dungeonRunner := usecase.NewDungeonRunner(dungeon, eventsParser, ew, ew)
 	dungeonRunner.Run()
 }
