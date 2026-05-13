@@ -8,6 +8,7 @@ type User struct {
 	State          UserState
 	FloorsTime     []time.Duration
 	CurrentFloor   int
+	MonstersKilled int
 	FloorStartTime CustomTime
 	BossKilled     bool
 	BossStartTime  CustomTime

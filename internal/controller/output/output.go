@@ -7,13 +7,12 @@ import (
 	"os"
 )
 
-// TODO: EventWrite struct instead of Writer to use custom formatting of output information
-
 type EventWriter struct {
 	file *os.File
 }
 
 func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID int, params string) string {
+	fmt.Println(eventID, lineTime, userID, params)
 	if params == "" {
 		return fmt.Sprintf(templates[eventID], lineTime, userID)
 	} else {
@@ -24,13 +23,21 @@ func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID 
 func (ew *EventWriter) WriteEvent(eventID domain.EventType, event domain.Event) (int, error) {
 	lineTime, userID, params := event.Time, event.User, event.Param
 	outputLine := getOutputLine(eventID, lineTime, userID, params)
+	fmt.Println(outputLine)
 	n, err := ew.file.WriteString(outputLine)
 	return n, err
 }
 
-func (ew *EventWriter) WriteImpossibleMove(eventID domain.EventType, event domain.Event, param string) (int, error) {
+func (ew *EventWriter) WriteImpossibleMove(eventID domain.EventType, event domain.Event, params string) (int, error) {
 	lineTime, userID := event.Time, event.User
-	outputLine := getOutputLine(eventID, lineTime, userID, param)
+	outputLine := getOutputLine(eventID, lineTime, userID, params)
+	n, err := ew.file.WriteString(outputLine)
+	return n, err
+}
+
+func (ew *EventWriter) WriteDeadUser(eventID domain.EventType, event domain.Event) (int, error) {
+	lineTime, userID := event.Time, event.User
+	outputLine := getOutputLine(eventID, lineTime, userID, "")
 	n, err := ew.file.WriteString(outputLine)
 	return n, err
 }
