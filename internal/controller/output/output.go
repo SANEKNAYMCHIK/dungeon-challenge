@@ -1,6 +1,8 @@
 package output
 
 import (
+	"dungeon-challenge/internal/domain"
+	"fmt"
 	"log"
 	"os"
 )
@@ -11,8 +13,18 @@ type Writer struct {
 	file *os.File
 }
 
-func (ew *Writer) Write(data []byte) (int, error) {
-	return ew.file.Write(data)
+func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID int, params string) string {
+	if params == "" {
+		return fmt.Sprintf(templates[eventID], lineTime, userID)
+	} else {
+		return fmt.Sprintf(templates[eventID], lineTime, userID, params)
+	}
+}
+
+func (ew *Writer) Write(eventID domain.EventType, lineTime domain.CustomTime, userID int, params string) (int, error) {
+	outputLine := getOutputLine(eventID, lineTime, userID, params)
+	n, err := ew.file.WriteString(outputLine)
+	return n, err
 }
 
 func (ew *Writer) Close() error {

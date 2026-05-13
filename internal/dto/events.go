@@ -9,6 +9,7 @@ import (
 
 func ToEventDomain(stringEvent string) (domain.Event, error) {
 	data := strings.Fields(stringEvent)
+	fmt.Println(data, data[0])
 	if len(data) < 3 {
 		return domain.Event{}, fmt.Errorf("invalid event format")
 	}
@@ -18,16 +19,16 @@ func ToEventDomain(stringEvent string) (domain.Event, error) {
 		return domain.Event{}, err
 	}
 
-	IDVal, err := strconv.Atoi(data[1])
+	UserVal, err := strconv.Atoi(data[1])
+	if err != nil {
+		return domain.Event{}, err
+	}
+
+	IDVal, err := strconv.Atoi(data[2])
 	if err != nil {
 		return domain.Event{}, err
 	}
 	EventID := domain.EventType(IDVal)
-
-	UserVal, err := strconv.Atoi(data[2])
-	if err != nil {
-		return domain.Event{}, err
-	}
 
 	return domain.Event{
 		Time:  TimeVal,

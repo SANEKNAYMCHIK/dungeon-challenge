@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type CustomTime struct {
 	time.Time
@@ -14,4 +17,8 @@ func (t *CustomTime) UnmarshalJSON(data []byte) error {
 	}
 	t.Time = parsedTime
 	return nil
+}
+
+func (t CustomTime) String() string {
+	return fmt.Sprintf("[%s]", t.Format("15:04:05"))
 }
