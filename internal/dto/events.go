@@ -9,7 +9,6 @@ import (
 
 func ToEventDomain(stringEvent string) (domain.Event, error) {
 	data := strings.Fields(stringEvent)
-	fmt.Println(data, data[0])
 	if len(data) < 3 {
 		return domain.Event{}, fmt.Errorf("invalid event format")
 	}

@@ -8,12 +8,14 @@ type User struct {
 	State          UserState
 	FloorsTime     []time.Duration
 	CurrentFloor   int
-	MonstersKilled int
+	MonstersKilled map[int]int
+	ClearedFloor   map[int]bool
+	FloorState     []bool
 	FloorStartTime CustomTime
 	BossKilled     bool
 	BossStartTime  CustomTime
-	BossEndTime    CustomTime
+	BossDuration   time.Duration
 	StartTime      CustomTime
-	EndTime        CustomTime
+	EndDuration    time.Duration
 	Result         ReportHeader
 }

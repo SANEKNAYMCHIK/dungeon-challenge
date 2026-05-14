@@ -18,5 +18,6 @@ func (d *Dungeon) ToDomain() domain.Dungeon {
 		Monsters: d.Monsters,
 		OpenAt:   d.OpenAt,
 		Duration: time.Duration(d.Duration) * time.Hour,
+		CloseAt:  domain.CustomTime{Time: d.OpenAt.Add(time.Duration(d.Duration) * time.Hour)},
 	}
 }

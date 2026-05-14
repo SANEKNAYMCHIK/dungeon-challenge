@@ -12,7 +12,6 @@ type EventWriter struct {
 }
 
 func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID int, params string) string {
-	fmt.Println(eventID, lineTime, userID, params)
 	if params == "" {
 		return fmt.Sprintf(templates[eventID], lineTime, userID)
 	} else {
@@ -23,7 +22,6 @@ func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID 
 func (ew *EventWriter) WriteEvent(eventID domain.EventType, event domain.Event) (int, error) {
 	lineTime, userID, params := event.Time, event.User, event.Param
 	outputLine := getOutputLine(eventID, lineTime, userID, params)
-	fmt.Println(outputLine)
 	n, err := ew.file.WriteString(outputLine)
 	return n, err
 }
