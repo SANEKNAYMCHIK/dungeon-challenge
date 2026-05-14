@@ -1,12 +1,10 @@
 package domain
 
-import "time"
-
 type User struct {
 	ID             int
 	Health         UserHealth
 	State          UserState
-	FloorsTime     []time.Duration
+	FloorsTime     []CustomDuration
 	CurrentFloor   int
 	MonstersKilled map[int]int
 	ClearedFloor   map[int]bool
@@ -14,8 +12,8 @@ type User struct {
 	FloorStartTime CustomTime
 	BossKilled     bool
 	BossStartTime  CustomTime
-	BossDuration   time.Duration
+	BossDuration   CustomDuration
 	StartTime      CustomTime
-	EndDuration    time.Duration
+	EndDuration    CustomDuration
 	Result         ReportHeader
 }

@@ -4,6 +4,7 @@ import (
 	"dungeon-challenge/config"
 	"dungeon-challenge/internal/controller/output"
 	"dungeon-challenge/internal/controller/parser"
+	"dungeon-challenge/internal/controller/report"
 	"dungeon-challenge/internal/usecase"
 	"flag"
 	"log"
@@ -17,6 +18,13 @@ func main() {
 	defer func() {
 		if err := ew.Close(); err != nil {
 			log.Printf("failed to close output file: %v", err)
+		}
+	}()
+
+	rw := report.MustMakeWriter(cfg.Output.ReportName)
+	defer func() {
+		if err := rw.Close(); err != nil {
+			log.Printf("failed to close report file: %v", err)
 		}
 	}()
 
@@ -35,6 +43,6 @@ func main() {
 		}
 	}()
 
-	dungeonRunner := usecase.NewDungeonRunner(dungeon, eventsParser, ew, ew)
+	dungeonRunner := usecase.NewDungeonRunner(dungeon, eventsParser, ew, rw)
 	dungeonRunner.Run()
 }

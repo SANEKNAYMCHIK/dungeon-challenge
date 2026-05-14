@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"dungeon-challenge/internal/controller/output"
+	"dungeon-challenge/internal/controller/report"
 	"dungeon-challenge/internal/domain"
 	"errors"
 	"io"
@@ -19,15 +20,19 @@ type EventWriter interface {
 	WriteDeadUser(domain.EventType, domain.Event) (int, error)
 }
 
+type ReportWriter interface {
+	WriteReport(map[int]*domain.User)
+}
+
 type DungeonRunner struct {
 	dungeonInfo  domain.Dungeon
 	eventsReader EventReader
 	outputWriter EventWriter
-	reportWriter *output.EventWriter
+	reportWriter ReportWriter
 	users        map[int]*domain.User
 }
 
-func NewDungeonRunner(dungeonInfo domain.Dungeon, eventsReader EventReader, outputWriter *output.EventWriter, reportWriter *output.EventWriter) *DungeonRunner {
+func NewDungeonRunner(dungeonInfo domain.Dungeon, eventsReader EventReader, outputWriter *output.EventWriter, reportWriter *report.ReportWriter) *DungeonRunner {
 	return &DungeonRunner{
 		dungeonInfo:  dungeonInfo,
 		eventsReader: eventsReader,
@@ -175,7 +180,10 @@ func (dr *DungeonRunner) HandleKilling(event domain.Event) {
 				dr.outputWriter.WriteEvent(domain.EventKilledMonster, event)
 				if user.MonstersKilled[user.CurrentFloor] == dr.dungeonInfo.Monsters {
 					user.ClearedFloor[user.CurrentFloor] = true
-					user.FloorsTime = append(user.FloorsTime, event.Time.Sub(user.FloorStartTime.Time))
+					user.FloorsTime = append(
+						user.FloorsTime,
+						domain.CustomDuration{Duration: event.Time.Sub(user.FloorStartTime.Time)},
+					)
 				}
 			} else {
 				dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
@@ -238,7 +246,7 @@ func (dr *DungeonRunner) HandleKillingBoss(event domain.Event) {
 		user := dr.users[event.User]
 		if dr.requireState(user, domain.StateInDungeon) {
 			if user.CurrentFloor == dr.dungeonInfo.Floors {
-				user.BossDuration = event.Time.Sub(user.FloorStartTime.Time)
+				user.BossDuration = domain.CustomDuration{Duration: event.Time.Sub(user.FloorStartTime.Time)}
 				user.BossKilled = true
 				user.ClearedFloor[user.CurrentFloor] = true
 				dr.outputWriter.WriteEvent(domain.EventKilledBoss, event)
@@ -257,7 +265,8 @@ func (dr *DungeonRunner) HandleLeftDungeon(event domain.Event) {
 		if dr.requireState(user, domain.StateInDungeon) {
 			if dr.allFloorsAreCleared(user.ClearedFloor) && user.BossKilled {
 				user.State = domain.StateFinished
-				user.EndDuration = event.Time.Sub(user.StartTime.Time)
+				user.EndDuration = domain.CustomDuration{Duration: event.Time.Sub(user.StartTime.Time)}
+				user.Result = domain.ReportHeaderSuccess
 				dr.outputWriter.WriteEvent(domain.EventLeftDungeon, event)
 			} else {
 				dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
@@ -301,6 +310,7 @@ func (dr *DungeonRunner) Run() {
 	for {
 		event, err := dr.eventsReader.ReadEvent()
 		if errors.Is(err, io.EOF) {
+			dr.reportWriter.WriteReport(dr.users)
 			break
 		}
 		if err != nil {
