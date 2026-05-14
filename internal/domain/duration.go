@@ -11,7 +11,7 @@ type CustomDuration struct {
 
 func (d CustomDuration) String() string {
 	t := time.Time{}.Add(time.Duration(d.Duration))
-	return fmt.Sprintf("[%s]", t.Format("15:04:05"))
+	return fmt.Sprintf("%s", t.Format("15:04:05"))
 }
 
 func AverageDuration(durations []CustomDuration) CustomDuration {

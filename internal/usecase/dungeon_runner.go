@@ -95,9 +95,7 @@ func (dr *DungeonRunner) HandleRegister(event domain.Event) {
 		}
 		dr.outputWriter.WriteEvent(event.ID, event)
 	} else {
-		dr.users[event.User].State = domain.StateDisqualified
-		dr.users[event.User].Result = domain.ReportHeaderDisqual
-		dr.outputWriter.WriteEvent(domain.EventDisqualified, event)
+		dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
 	}
 }
 
@@ -151,6 +149,7 @@ func (dr *DungeonRunner) HandleDamage(event domain.Event) {
 			if user.Health <= domain.MinHealth {
 				user.Health = domain.MinHealth
 				user.State = domain.StateDead
+				user.EndDuration = domain.CustomDuration{Duration: event.Time.Sub(user.StartTime.Time)}
 				user.Result = domain.ReportHeaderFail
 				dr.outputWriter.WriteDeadUser(domain.EventDead, event)
 			}
@@ -164,6 +163,7 @@ func (dr *DungeonRunner) HandleFail(event domain.Event) {
 	if dr.requireUser(event.User) {
 		user := dr.users[event.User]
 		user.State = domain.StateDisqualified
+		user.EndDuration = domain.CustomDuration{Duration: event.Time.Sub(user.StartTime.Time)}
 		user.Result = domain.ReportHeaderDisqual
 		dr.outputWriter.WriteEvent(domain.EventFailed, event)
 	} else {
@@ -202,6 +202,7 @@ func (dr *DungeonRunner) HandleNextFloor(event domain.Event) {
 				user.CurrentFloor++
 				if !user.FloorState[user.CurrentFloor] {
 					user.FloorStartTime = event.Time
+					user.FloorState[user.CurrentFloor] = true
 				}
 				dr.outputWriter.WriteEvent(domain.EventNextFloor, event)
 			} else {
@@ -233,8 +234,12 @@ func (dr *DungeonRunner) HandleEnteredBossFloor(event domain.Event) {
 	if dr.requireUser(event.User) {
 		user := dr.users[event.User]
 		if dr.requireState(user, domain.StateInDungeon) {
-			user.BossStartTime = event.Time
-			dr.outputWriter.WriteEvent(domain.EventEnteredBossFloor, event)
+			if user.CurrentFloor == dr.dungeonInfo.Floors {
+				user.BossStartTime = event.Time
+				dr.outputWriter.WriteEvent(domain.EventEnteredBossFloor, event)
+			} else {
+				dr.outputWriter.WriteImpossibleMove(domain.EventImpossibleMove, event, event.ID.String())
+			}
 		}
 	} else {
 		dr.disqualifyUnregisteredUser(event)
@@ -246,7 +251,7 @@ func (dr *DungeonRunner) HandleKillingBoss(event domain.Event) {
 		user := dr.users[event.User]
 		if dr.requireState(user, domain.StateInDungeon) {
 			if user.CurrentFloor == dr.dungeonInfo.Floors {
-				user.BossDuration = domain.CustomDuration{Duration: event.Time.Sub(user.FloorStartTime.Time)}
+				user.BossDuration = domain.CustomDuration{Duration: event.Time.Sub(user.BossStartTime.Time)}
 				user.BossKilled = true
 				user.ClearedFloor[user.CurrentFloor] = true
 				dr.outputWriter.WriteEvent(domain.EventKilledBoss, event)
@@ -323,6 +328,7 @@ func (dr *DungeonRunner) Run() {
 				if !dr.requireState(user, domain.StateDead, domain.StateDisqualified, domain.StateFinished) {
 					user.Result = domain.ReportHeaderFail
 					user.State = domain.StateDead
+					user.EndDuration = domain.CustomDuration{Duration: event.Time.Sub(user.StartTime.Time)}
 				}
 			} else {
 				dr.disqualifyUnregisteredUser(event)
