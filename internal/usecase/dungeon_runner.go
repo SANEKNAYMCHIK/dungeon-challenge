@@ -15,9 +15,9 @@ type EventReader interface {
 }
 
 type EventWriter interface {
-	WriteEvent(domain.EventType, domain.Event) (int, error)
-	WriteImpossibleMove(domain.EventType, domain.Event, string) (int, error)
-	WriteDeadUser(domain.EventType, domain.Event) (int, error)
+	WriteEvent(domain.EventType, domain.Event)
+	WriteImpossibleMove(domain.EventType, domain.Event, string)
+	WriteDeadUser(domain.EventType, domain.Event)
 }
 
 type ReportWriter interface {

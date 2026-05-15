@@ -23,10 +23,16 @@ func getOutputLine(
 }
 
 func (rw *ReportWriter) WriteReport(users map[int]*domain.User) {
-	rw.file.WriteString("Final report:\n")
+	_, err := rw.file.WriteString("Final report:\n")
+	if err != nil {
+		log.Printf("error with writing string in report: %v", err)
+	}
 	for _, v := range users {
 		outputLine := getOutputLine(v.Result, v.ID, v.EndDuration, domain.AverageDuration(v.FloorsTime), v.BossDuration, v.Health)
-		rw.file.WriteString(outputLine)
+		_, err := rw.file.WriteString(outputLine)
+		if err != nil {
+			log.Printf("error with writing string in report: %v", err)
+		}
 	}
 }
 

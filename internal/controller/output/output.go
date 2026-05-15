@@ -19,25 +19,31 @@ func getOutputLine(eventID domain.EventType, lineTime domain.CustomTime, userID 
 	}
 }
 
-func (ew *EventWriter) WriteEvent(eventID domain.EventType, event domain.Event) (int, error) {
+func (ew *EventWriter) WriteEvent(eventID domain.EventType, event domain.Event) {
 	lineTime, userID, params := event.Time, event.User, event.Param
 	outputLine := getOutputLine(eventID, lineTime, userID, params)
-	n, err := ew.file.WriteString(outputLine)
-	return n, err
+	_, err := ew.file.WriteString(outputLine)
+	if err != nil {
+		log.Printf("error with writing string in report: %v", err)
+	}
 }
 
-func (ew *EventWriter) WriteImpossibleMove(eventID domain.EventType, event domain.Event, params string) (int, error) {
+func (ew *EventWriter) WriteImpossibleMove(eventID domain.EventType, event domain.Event, params string) {
 	lineTime, userID := event.Time, event.User
 	outputLine := getOutputLine(eventID, lineTime, userID, params)
-	n, err := ew.file.WriteString(outputLine)
-	return n, err
+	_, err := ew.file.WriteString(outputLine)
+	if err != nil {
+		log.Printf("error with writing string in report: %v", err)
+	}
 }
 
-func (ew *EventWriter) WriteDeadUser(eventID domain.EventType, event domain.Event) (int, error) {
+func (ew *EventWriter) WriteDeadUser(eventID domain.EventType, event domain.Event) {
 	lineTime, userID := event.Time, event.User
 	outputLine := getOutputLine(eventID, lineTime, userID, "")
-	n, err := ew.file.WriteString(outputLine)
-	return n, err
+	_, err := ew.file.WriteString(outputLine)
+	if err != nil {
+		log.Printf("error with writing string in report: %v", err)
+	}
 }
 
 func (ew *EventWriter) Close() error {
