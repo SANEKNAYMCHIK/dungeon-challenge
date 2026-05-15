@@ -265,3 +265,51 @@ func TestHandleLeftDungeon(t *testing.T) {
 		t.Fatalf("expected finished state")
 	}
 }
+
+func TestImpossibleMove(t *testing.T) {
+	dr := makeRunner()
+
+	dr.users[1] = &domain.User{
+		ID:    1,
+		State: domain.StateRegistered,
+	}
+
+	event := domain.Event{
+		ID:   domain.EventNextFloor,
+		User: 1,
+	}
+
+	dr.HandleNextFloor(event)
+
+	if dr.users[1].CurrentFloor != 0 {
+		t.Fatalf("floor should not change")
+	}
+}
+
+func TestDungeonClosed(t *testing.T) {
+	dr := makeRunner()
+
+	dr.dungeonInfo.CloseAt = domain.CustomTime{
+		Time: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC),
+	}
+
+	dr.users[1] = &domain.User{
+		ID:    1,
+		State: domain.StateInDungeon,
+	}
+
+	event := domain.Event{
+		Time: domain.CustomTime{
+			Time: time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC),
+		},
+	}
+
+	if !event.Time.Before(dr.dungeonInfo.CloseAt.Time) {
+		user := dr.users[1]
+		user.State = domain.StateDead
+	}
+
+	if dr.users[1].State != domain.StateDead {
+		t.Fatalf("user should be dead")
+	}
+}
